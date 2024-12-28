@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] { 
+    display: none; 
+}
+
+
+
+/* Hide sidebar by default */
+#sidebar {
+    display: none;
+    width: 0;
+    transition: width 0.3s ease, display 0.3s ease;
+}
+
+/* When sidebar is open, show it */
+.sidebar-open #sidebar {
+    display: block;
+    width: 18rem; /* Tailwind's w-72 */
+}
+
+/* Adjust main content margin based on sidebar state */
+.sidebar-open #mainWrapper {
+    margin-left: 0rem; /* Tailwind's ml-72 */
+    transition: margin-left 0.3s ease;
+}
+
+.sidebar-closed #mainWrapper {
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
