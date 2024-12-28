@@ -26,19 +26,13 @@ A comprehensive Point of Sale (POS) and Inventory Management System built with L
 
 ## Installation
 
-1. Clone the repository
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/sweets-inventory-pos.git
+cd inventory-tracker
+
+2. **Clone the repository**
 ```bash
 git clone https://github.com/yourusername/sweets-inventory-pos.git
 cd sweets-inventory-pos
 
-2. Run database migrations and seeders
-```bash
-php artisan migrate
-
-3. Create storage link
-```bash
-php artisan storage:link
-
-4. Start the development server
-```bash
-php artisan serve
