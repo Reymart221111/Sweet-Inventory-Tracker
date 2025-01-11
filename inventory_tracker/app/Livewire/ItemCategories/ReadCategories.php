@@ -82,7 +82,7 @@ class ReadCategories extends Component
     {
         $this->updateCacheKey();
         
-        $categories = cache()->remember($this->cacheKey, 60, function () {
+        $categories = cache()->remember($this->cacheKey, 60*60, function () {
             return ItemCategory::query()
                 ->where('name', 'like', '%' . $this->search . '%')
                 ->orWhere('description', 'like', '%' . $this->search . '%')
