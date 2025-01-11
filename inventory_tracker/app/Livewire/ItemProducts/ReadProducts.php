@@ -8,7 +8,6 @@ use App\Models\ItemCategory;
 use App\Models\ItemProducts;
 use Illuminate\Support\Facades\Storage as FacadesStorage;
 use Livewire\Attributes\On;
-use Storage;
 use Throwable;
 
 class ReadProducts extends Component
@@ -17,17 +16,20 @@ class ReadProducts extends Component
 
     public $search = '';
     public $selectedCategory = '';
+    public $categories = [];
 
-    // Sync 'search' and 'page' with URL query parameters
     protected $queryString = [
         'search' => ['except' => ''],
         'selectedCategory' => ['except' => ''],
         'page' => ['except' => 1],
     ];
 
-    /**
-     * Reset pagination when the search term is updated
-     */
+    public function mount()
+    {
+        // Load categories once when component is mounted
+        $this->categories = ItemCategory::orderBy('name')->get();
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
@@ -38,12 +40,13 @@ class ReadProducts extends Component
         session()->forget(['success', 'error']);
     }
 
-
     #[On('store-event')]
     public function handleStoreEvent($event)
     {
         if ($event['status'] === 'success') {
             session()->flash('success', $event['message']);
+            // Refresh categories
+            $this->categories = ItemCategory::orderBy('name')->get();
         } else {
             session()->flash('error', $event['message']);
         }
@@ -54,6 +57,8 @@ class ReadProducts extends Component
     {
         if ($event['status'] === 'success') {
             session()->flash('success', $event['message']);
+            // Refresh categories
+            $this->categories = ItemCategory::orderBy('name')->get();
         } else {
             session()->flash('error', $event['message']);
         }
@@ -63,25 +68,22 @@ class ReadProducts extends Component
     {
         $product = ItemProducts::findOrFail($productId);
 
-        try{
+        try {
             $product->delete();
 
             if ($product->image_path && FacadesStorage::disk('public')->exists($product->image_path)) {
                 FacadesStorage::disk('public')->delete($product->image_path);
             }
 
-            session()->flash('success', 'Product Deleted Succesfully');
-        }catch(Throwable $th)
-        {
-            session()->flash('error', 'Error: '.$th->getMessage());
+            session()->flash('success', 'Product Deleted Successfully');
+        } catch (Throwable $th) {
+            session()->flash('error', 'Error: ' . $th->getMessage());
         }
     }
 
     public function render()
     {
-        $categories = ItemCategory::orderBy('name')->get();
-
-        $products = ItemProducts::query()
+        $products = ItemProducts::with('category')
             ->where('name', 'like', "%{$this->search}%")
             ->when($this->selectedCategory, function ($query) {
                 if ($this->selectedCategory) {
@@ -93,7 +95,7 @@ class ReadProducts extends Component
 
         return view('livewire.item-products.read-products', [
             'products' => $products,
-            'categories' => $categories,
+            'categories' => $this->categories,
         ]);
     }
 }
