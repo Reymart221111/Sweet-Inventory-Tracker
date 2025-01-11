@@ -6,33 +6,39 @@ use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\ItemCategory;
-use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 class ReadCategories extends Component
 {
     use WithPagination;
 
-    // Public property for search input
     public $search = '';
+    public $page = 1;
+    private $cacheKey;
+    
+    protected $paginationTheme = 'bootstrap';
 
-    // Sync 'search' and 'page' with URL query parameters
     protected $queryString = [
         'search' => ['except' => ''],
         'page' => ['except' => 1],
     ];
 
-    /**
-     * Reset pagination when the search term is updated
-     */
+    public function mount()
+    {
+        $this->updateCacheKey();
+    }
+
+    private function updateCacheKey()
+    {
+        $this->cacheKey = 'categories_' . md5($this->search . $this->page);
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
+        $this->updateCacheKey();
     }
 
-    /**
-     * Handle events emitted after storing a category
-     */
     #[On('store-event')]
     public function handleStoreEvent($event)
     {
@@ -53,9 +59,6 @@ class ReadCategories extends Component
         }
     }
 
-    /**
-     * Clear session messages (optional)
-     */
     public function clearSession()
     {
         session()->forget(['success', 'error']);
@@ -67,22 +70,19 @@ class ReadCategories extends Component
 
         try {
             $category->delete();
-
-            Cache::forget('categories_' . $this->search . '_page_' . $this->page); // Clear the cache for the current search and page
-
-            session()->flash('success', 'Record Deleted Succesfully');
+            $this->updateCacheKey();
+            cache()->forget($this->cacheKey);
+            session()->flash('success', 'Record Deleted Successfully');
         } catch (Throwable $th) {
             session()->flash('error', 'Error:' . $th->getMessage());
         }
     }
 
-    /**
-     * Render the component view with filtered and paginated categories
-     */
-
     public function render()
     {
-        $categories = Cache::remember('categories_' . $this->search . '_page_' . $this->page, now()->addMinutes(15), function () {
+        $this->updateCacheKey();
+        
+        $categories = cache()->remember($this->cacheKey, 60, function () {
             return ItemCategory::query()
                 ->where('name', 'like', '%' . $this->search . '%')
                 ->orWhere('description', 'like', '%' . $this->search . '%')
